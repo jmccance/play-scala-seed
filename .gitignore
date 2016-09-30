@@ -1,0 +1,9 @@
+target/
+
+# Activator
+/RUNNING_PID
+.sbtserver/
+
+# IDE state
+.idea
+
