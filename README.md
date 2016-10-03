@@ -59,9 +59,31 @@ While not needed for this project, they're worth mentioning. Writing an sbt plug
 
 [writing-sbt-plugins]: http://www.scala-sbt.org/0.13/docs/Plugins.html
 
+## Configuration
+
+### Notes
+
+Use HOCON and Typesafe Config. Use HOCON well, taking advantage of nesting and duration types. Use `spine-case` to be consistent with other majors consumers of HOCON, like Akka and Play. Separate parsing the config from modeling your config. Use applicative validation to parse config in such a way that you get all the errors in it at the same time. Model your configuration as case classes; individual objects should not know where it came from. (Makes it easier to write tests too; you don’t need to create a Config object in order to initialize your SUT.)  Make sure your config parser is ignorant of where in the config object it is; it should expect the root of its hierarchy. This helps decouple your config parser from the structure of your config file.
+
+Read [this blog post](http://www.janvsmachine.net/2016/07/effective-typesafe-config.html).
+
 ## Data Modeling
 
 ## Error Handling
+
+### Notes
+
+tl;dr: If your team isn't ready for category theory typeclasses, then use [Scalactic](https://scalactic.org)'s Or type. If you and your team are ready for Applicatives, use Cats or Scalaz. Regardless of which one you want to use, model your errors as an algebraic data type. See Cats's [documentation on Xor](http://typelevel.org/cats/tut/xor.html#xor-in-the-small-xor-in-the-large) for a good discussion of how to do this.
+
+You could use lihaoyi's [sourcecode](https://github.com/lihaoyi/sourcecode) to add more information to the output if desired.
+
+Use Try for creating thin Scala layers over exception-happy Java libraries. E.g., if you want a thin layer on top of the AWS SDK, creating wrappers that return Try instead of exceptions can be a good way to protect yourself from the exceptions without too much investment. (Similarly, use Option to protect yourself from libraries that want to make you deal with `null`.)
+
+## Play
+
+### Notes
+
+I've disabled the PlayLayoutPlugin. As far as I can tell, the Play layout is a holdover from the original Play v1, which was trying to be more Rails-like. Disabling the layout plugin restores the traditional Maven-style layout that Java and Scala developers are familiar with, so everything should be where you expect it to be. The only downside I can see to this is that some tutorials and reference applications for Play will not match up to this layout. But if you keep in mind that `app` means `src/main/scala` and ``
 
 ## Dependency Injection
 
