@@ -1,6 +1,11 @@
 import sbt._
 
 object Dependencies {
+  object MacWire {
+    // Macros are only needed at compile time.
+    val macros = "com.softwaremill.macwire" %% "macros" % "2.2.4" % "provided"
+  }
+
   object ScalaCheck {
     val scalacheck = "org.scalacheck" %% "scalacheck" % "1.13.2"
   }

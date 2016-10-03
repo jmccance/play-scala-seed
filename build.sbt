@@ -2,20 +2,64 @@
 // Projects
 
 lazy val common =
-  (project in file("common"))
-    .settings(commonSettings)
+  (project in file("common")).settings(commonSettings)
 
 lazy val example =
-  (project in file("example"))
-    .dependsOn(common)
+  (project in file("example")).dependsOn(common).settings(commonSettings)
+
+lazy val `example-data` =
+  (project in file("example-data"))
+    .dependsOn(
+      common,
+      example
+    )
+    .settings(commonSettings)
+
+lazy val `example-data-impl` =
+  (project in file("example-data-impl"))
+    .dependsOn(
+      common,
+      example
+    )
+    .settings(commonSettings)
+
+lazy val `example-service` =
+  (project in file("example-service"))
+    .dependsOn(
+      common,
+      example,
+      `example-data`
+    )
+    .settings(commonSettings)
+
+lazy val `example-service-impl` =
+  (project in file("example-service-impl"))
+    .dependsOn(
+      common,
+      example,
+      `example-data`,
+      `example-service`
+    )
     .settings(commonSettings)
 
 lazy val `example-web` =
   (project in file("example-web"))
     .enablePlugins(PlayScala)
     .disablePlugins(PlayLayoutPlugin)
-    .dependsOn(common)
-    .settings(commonSettings)
+    .dependsOn(
+      common,
+      `example`,
+      `example-data`,
+      `example-data-impl`,
+      `example-service`,
+      `example-service-impl`
+    )
+    .settings(
+      commonSettings,
+      libraryDependencies ++= Seq(
+        Dependencies.MacWire.macros
+      )
+    )
 
 /////////////////////
 // Global Settings
@@ -37,7 +81,10 @@ lazy val commonSettings =
     ++ testSettings)
 
 lazy val commonDependencies = Seq(
-  libraryDependencies += Dependencies.Scalactic.scalactic
+  libraryDependencies ++= Seq(
+    Dependencies.Scalactic.scalactic,
+    Dependencies.Typesafe.config
+  )
 )
 
 lazy val compileSettings = Seq(
