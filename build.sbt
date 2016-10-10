@@ -4,58 +4,68 @@
 lazy val common =
   (project in file("common")).settings(commonSettings)
 
-lazy val example =
-  (project in file("example")).dependsOn(common).settings(commonSettings)
+lazy val contacts =
+  (project in file("contacts")).dependsOn(common).settings(commonSettings)
 
-lazy val `example-data` =
-  (project in file("example-data"))
+lazy val `contacts-data` =
+  (project in file("contacts-data"))
     .dependsOn(
       common,
-      example
+      contacts
     )
     .settings(commonSettings)
 
-lazy val `example-data-impl` =
-  (project in file("example-data-impl"))
+lazy val `contacts-data-impl` =
+  (project in file("contacts-data-impl"))
     .dependsOn(
       common,
-      example
+      contacts,
+      `contacts-data`
     )
-    .settings(commonSettings)
+    .settings(
+      commonSettings,
+      loggingDependencies
+    )
 
-lazy val `example-service` =
-  (project in file("example-service"))
+lazy val `contacts-service` =
+  (project in file("contacts-service"))
     .dependsOn(
       common,
-      example,
-      `example-data`
+      contacts,
+      `contacts-data`
     )
-    .settings(commonSettings)
+    .settings(
+      commonSettings
+    )
 
-lazy val `example-service-impl` =
-  (project in file("example-service-impl"))
+lazy val `contacts-service-impl` =
+  (project in file("contacts-service-impl"))
     .dependsOn(
       common,
-      example,
-      `example-data`,
-      `example-service`
+      contacts,
+      `contacts-data`,
+      `contacts-service`
     )
-    .settings(commonSettings)
+    .settings(
+      commonSettings,
+      loggingDependencies
+    )
 
-lazy val `example-web` =
-  (project in file("example-web"))
+lazy val `contacts-web` =
+  (project in file("contacts-web"))
     .enablePlugins(PlayScala)
     .disablePlugins(PlayLayoutPlugin)
     .dependsOn(
       common,
-      `example`,
-      `example-data`,
-      `example-data-impl`,
-      `example-service`,
-      `example-service-impl`
+      `contacts`,
+      `contacts-data`,
+      `contacts-data-impl`,
+      `contacts-service`,
+      `contacts-service-impl`
     )
     .settings(
       commonSettings,
+      loggingDependencies,
       libraryDependencies ++= Seq(
         Dependencies.MacWire.macros
       )
@@ -67,7 +77,7 @@ lazy val `example-web` =
 organization in ThisBuild := "com.example"
 scalaVersion in ThisBuild := "2.11.8"
 
-scalafmtConfig in ThisBuild := Some(file(".scalafmt"))
+scalafmtConfig in ThisBuild := Some(file(".scalafmt.conf"))
 
 // Never publish this root project as an artifact; there's nothing of value here.
 publishArtifact in ThisProject := false
@@ -85,6 +95,10 @@ lazy val commonDependencies = Seq(
     Dependencies.Scalactic.scalactic,
     Dependencies.Typesafe.config
   )
+)
+
+lazy val loggingDependencies = Seq(
+  libraryDependencies += Dependencies.Typesafe.scalaLogging
 )
 
 lazy val compileSettings = Seq(

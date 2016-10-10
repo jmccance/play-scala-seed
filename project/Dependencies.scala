@@ -21,6 +21,8 @@ object Dependencies {
   object Typesafe {
     val config = "com.typesafe" % "config" % "1.3.1"
 
+    val scalaLogging = "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0"
+
     object Play {
       val Version = "2.5.8"
 

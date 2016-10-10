@@ -88,9 +88,9 @@ package object config {
     /** Lift `f` into Or[A, Every[ConfigException] so that if any ConfigExceptions are thrown
       * they'll be caught and return as a Bad.
       */
-    private def lift[A, B](f: A => B): A => B Or Every[ConfigException] = { a =>
-      attempt(f(a))
-        .badMap {
+    private def lift[A, B](f: A => B): A => B Or Every[ConfigException] = {
+      a =>
+        attempt(f(a)).badMap {
           case ce: ConfigException => One(ce)
           case t: Throwable =>
             // The Typesafe API insists that it only throws ConfigExceptions. We'll respect this

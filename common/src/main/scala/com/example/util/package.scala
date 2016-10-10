@@ -8,7 +8,8 @@ package object util {
     * This conversion will not be needed in Scala 2.12:
     *   http://www.scala-lang.org/news/2.12.0-RC1
     */
-  implicit class RightBiasedEitherSyntax[A, B](val underlying: Either[A, B]) extends AnyVal {
+  implicit class RightBiasedEitherSyntax[A, B](val underlying: Either[A, B])
+      extends AnyVal {
 
     def flatMap[AA >: A, Y](f: B => Either[AA, Y]): Either[AA, Y] =
       underlying.right.flatMap(f)
@@ -25,7 +26,7 @@ package object util {
     // Note: At this time recover does not have an analogue, even in 2.12.
     def recover[BB >: B](f: A => BB): Either[A, BB] = underlying match {
       case Left(a) => Right(f(a))
-      case _       => underlying
+      case _ => underlying
     }
   }
 

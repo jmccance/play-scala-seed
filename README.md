@@ -73,7 +73,7 @@ Read [this blog post](http://www.janvsmachine.net/2016/07/effective-typesafe-con
 
 ### Notes
 
-tl;dr: If your team isn't ready for category theory typeclasses, then use [Scalactic](https://scalactic.org)'s Or type. If you and your team are ready for Applicatives, use Cats or Scalaz. Regardless of which one you want to use, model your errors as an algebraic data type. See Cats's [documentation on Xor](http://typelevel.org/cats/tut/xor.html#xor-in-the-small-xor-in-the-large) for a good discussion of how to do this.
+tl;dr: If your team isn't ready for category theory typeclasses, then use [Scalactic](https://scalactic.org)'s Or type. If you and your team are ready for Applicatives, use Cats or Scalaz. Regardless of which one you want to use, com.example.contacts.model your errors as an algebraic data type. See Cats's [documentation on Xor](http://typelevel.org/cats/tut/xor.html#xor-in-the-small-xor-in-the-large) for a good discussion of how to do this.
 
 You could use lihaoyi's [sourcecode](https://github.com/lihaoyi/sourcecode) to add more information to the output if desired.
 
