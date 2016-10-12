@@ -1,4 +1,4 @@
-package com.example.web
+package com.example.contacts.web
 
 import play.api.routing.Router.Routes
 import play.api.routing.SimpleRouter

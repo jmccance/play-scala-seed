@@ -2,7 +2,11 @@
 // Projects
 
 lazy val common =
-  (project in file("common")).settings(commonSettings)
+  (project in file("common"))
+    .settings(
+      commonSettings,
+      libraryDependencies += Dependencies.Typesafe.Play.playJson % Provided
+    )
 
 lazy val contacts =
   (project in file("contacts")).dependsOn(common).settings(commonSettings)

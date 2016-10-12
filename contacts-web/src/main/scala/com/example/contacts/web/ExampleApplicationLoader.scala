@@ -1,4 +1,4 @@
-package com.example.web
+package com.example.contacts.web
 
 import com.example.contacts.data.{ContactRepository, InMemoryContactRepository}
 import com.example.contacts.service.{ContactService, ContactServiceImpl}

@@ -1,4 +1,4 @@
-package com.example.web
+package com.example.contacts.web
 
 import com.example.contacts.service.{CreateContact, GetContact}
 import play.api.libs.json._

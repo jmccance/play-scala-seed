@@ -5,6 +5,14 @@ This project captures some patterns, tips, and opinions I've acquired for Scala 
 
 This is a work in progress. Any section with a "Notes" subsection is even more WIP than others, and I'm just using that to capture my thoughts prior to a clearer write-up. Caveat programmator.
 
+## My Biases
+
+We all have biases about what we like in languages, libraries, and frameworks, and I'm no exception. These biases are formed by a mix of accident, experience, and personal preference. I list a few of them below, since it might help explain some of the choices I made in this project.
+
+**If I have to choose between "magic" and more code, I'll take more code.** One trick that frameworks use to make your life "easier" is to require that you hold to a particular convention so that they can magically generate functionality for you. These conventions can only be figured out by reading documentation and looking at sample projects, and good luck if you stumble into an edge case or want to design your application slightly differently. I would rather give up the reduced boilerplate if it means that people can easily discover how the application is put together using their IDE (without any special plugins other than Scala language support).
+
+**I prefer compile-time solutions to run-time solutions.** If I have to choose my pain, I would rather spend more time trying to get something to compile than chasing down run-time errors. For one thing, I know when something compiles; I don't know when I've found all of the run-time errors. Because of this, for example, I prefer MacWire's macro-based wiring to Guice's runtime wiring, and I prefer play-json's (admittedly imperfect) compile time specification of JSON serializers over Jackson's ability to generate serializers at runtime.
+
 ## Importing into IntelliJ
 
 When any sbt project into IntelliJ, I recommend these settings:
@@ -61,6 +69,51 @@ While not needed for this project, they're worth mentioning. Writing an sbt plug
 
 ## Configuration
 
+Both Play and Akka make use of [Typesafe Config][typesafe-config], and in my experience it's a great library. The HOCON format it uses has a rich set of primitives, including durations ("5s", "30 minutes") and byte quantities ("128MB") to help eliminate unit errors. It also has support for references and includes.
+
+[typesafe-config]: https://typesafehub.github.io/config/
+
+That said, parsing configuration files is only one part of the problem. It's also important to model your application's configuration. This avoids coupling your components to your configuration library, and makes it easier to initialize components in tests. It's simpler to just declare a case class with the desired configuration than to maintain a test configuration file or define the configuration file inline.
+
+This project defines a collection of extension methods in `com.example.util.config` to easily parse a config object into a case class or a collection of errors using Scalactic.
+
+Jan Stette's post [Effective Typesafe Config][effective-typesafe-config] summarizes a lot of my opinions about how to best use Typesafe Config, such as making proper use of `reference.conf` files and avoiding using absolute paths. The one point I would add — simply because it bugs me to see styles mixed — is to make sure to use `spine-case` and not `camelCase` for config names. Most major users HOCON (like Play and Akka) use this style, so we might as well try to be consistent.
+
+[effective-typesafe-config]: http://www.janvsmachine.net/2016/07/effective-typesafe-config.html
+
+Below is an example of the basic recipe I use when defining configurations.
+
+```scala
+import java.time._
+import org.scalactic._
+import org.scalactic.Accumulation._
+import com.example.util.config._
+
+class MyService(config: MyServiceConfig) {
+  import config._ // To simplify accessing config parameters
+}
+
+case class MyServiceConfig(timeout: Duration, maxCount: Long, id: String)
+
+object MyServiceConfig {
+  def from(config: Config): MyServiceConfig Or Every[ConfigException] = {
+    withGood(
+      config.duration("timeout"),
+      config.long("max-count"),
+      config.string("id")
+    )(MyServiceConfig.apply)
+  }
+}
+```
+
+### Alternatives
+
+The downside of Typesafe Config is that it has a strong Java flavor, preferring to throw exceptions instead of returning error types. There are [a number of wrappers][tc-wrappers] around Typesafe Config that make it more Scala-like. In addition to more Scala-like syntax, many of these libraries also offer reduced boilerplate for parsing Configs into case classes.
+
+If you don't want to think too much about configuration, I would stand by my main recommendation above. If you're willing to experiment, I would definitely recommend trying one of the Scala libraries.
+
+[tc-wrappers]: https://github.com/typesafehub/config#scala-wrappers-for-the-java-library
+
 ### Notes
 
 Use HOCON and Typesafe Config. Use HOCON well, taking advantage of nesting and duration types. Use `spine-case` to be consistent with other majors consumers of HOCON, like Akka and Play. Separate parsing the config from modeling your config. Use applicative validation to parse config in such a way that you get all the errors in it at the same time. Model your configuration as case classes; individual objects should not know where it came from. (Makes it easier to write tests too; you don’t need to create a Config object in order to initialize your SUT.)  Make sure your config parser is ignorant of where in the config object it is; it should expect the root of its hierarchy. This helps decouple your config parser from the structure of your config file.
@@ -73,17 +126,44 @@ Read [this blog post](http://www.janvsmachine.net/2016/07/effective-typesafe-con
 
 ### Notes
 
-tl;dr: If your team isn't ready for category theory typeclasses, then use [Scalactic](https://scalactic.org)'s Or type. If you and your team are ready for Applicatives, use Cats or Scalaz. Regardless of which one you want to use, com.example.contacts.model your errors as an algebraic data type. See Cats's [documentation on Xor](http://typelevel.org/cats/tut/xor.html#xor-in-the-small-xor-in-the-large) for a good discussion of how to do this.
+tl;dr: If your team isn't ready for category theory typeclasses, then use [Scalactic](https://scalactic.org)'s Or type. If you and your team are ready for Applicatives, use Cats or Scalaz. Regardless of which one you want to use, model your errors as an algebraic data type. See Cats's [documentation on Xor](http://typelevel.org/cats/tut/xor.html#xor-in-the-small-xor-in-the-large) for a good discussion of how to do this.
 
 You could use lihaoyi's [sourcecode](https://github.com/lihaoyi/sourcecode) to add more information to the output if desired.
 
 Use Try for creating thin Scala layers over exception-happy Java libraries. E.g., if you want a thin layer on top of the AWS SDK, creating wrappers that return Try instead of exceptions can be a good way to protect yourself from the exceptions without too much investment. (Similarly, use Option to protect yourself from libraries that want to make you deal with `null`.)
 
+## JSON
+
+I've used [play-json][] on a number of projects and been quite happy with it. It's not perfect by any means — I wish `parse` didn't throw exceptions, for example — but most of its flaws can be mitigated with some custom helper methods.
+
+[play-json]: https://playframework.com/documentation/2.5.x/ScalaJson
+
+### Alternatives
+
+The most interesting alternative to play-json is [Circe][]. Circe is a performance-focused, functional JSON library. Rather than macros (which can be finicky and a headache to debug), it uses Shapeless to derive generic serializers in a typesafe way. This should significantly reduce the boilerplate around JSON serializers.
+
+I've yet to use it for anything myself, but it's near the top of the list of Scala libraries I'd like to try.
+
+[Circe]: https://travisbrown.github.io/circe/
+
 ## Play
 
-### Notes
+The Play Framework is a safe choice for building web applications in Scala. It has the backing of Lightbend, and has been around long enough that a lot of people (comparatively) have experience with it.
 
-I've disabled the PlayLayoutPlugin. As far as I can tell, the Play layout is a holdover from the original Play v1, which was trying to be more Rails-like. Disabling the layout plugin restores the traditional Maven-style layout that Java and Scala developers are familiar with, so everything should be where you expect it to be. The only downside I can see to this is that some tutorials and reference applications for Play will not match up to this layout. But if you keep in mind that `app` means `src/main/scala` and ``
+I've made a couple choices that deviate from the standard Play app. The first is that I've disabled the PlayLayoutPlugin. As far as I can tell, the Play layout is a holdover from the original Play v1, which was trying to be more Rails-like. Disabling the layout plugin restores the traditional Maven-style layout that Java and Scala developers are familiar with, so everything should be where you expect it to be. To me, the value of having a familiar and consistent project layout outweighs the slight drawback of having the documentation not quite align with the project. A description of the mappings for the Maven-style layout can be found [here](https://playframework.com/documentation/2.5.x/Anatomy#default-sbt-layout).
+
+Next, I decided to use the [SIRD router][sird] instead of the usual `routes` file. In my experience, routes files can rapidly get unwieldy. SIRD routers compose nicely, making it easier to scale from a single router to multiple, controller-specific routers. They are also ultimately less "magical" than the `routes` file, since you can easily write tests for your router, experiment with it in the REPL or a scratch file, or drill down into the code to figure out what's happening under the hood.
+
+[sird]: https://playframework.com/documentation/2.5.x/ScalaSirdRouter
+
+Finally, I elected to use MacWire instead of Guice to handle dependency injection. See the section "Dependency Injection" for more information on the decision."
+
+### Alternatives
+
+Play seems to want to be more like a traditional framework à la Spring. For more minimal, library-style HTTP, Akka HTTP and Finch seem like the most interesting candidates. Finch in particular is interesting for being very FP-oriented as well as being [one of the fastest HTTP libraries in Scala](http://vkostyukov.net/posts/how-fast-is-finch/).
+
+* [Akka HTTP](http://doc.akka.io/docs/akka/2.4/scala/http/index.html)
+* [Finch](https://github.com/finagle/finch)
 
 ## Dependency Injection
 
@@ -125,6 +205,25 @@ I don't like building component hierarchies through trait composition (i.e., "th
 
 * Experience suggests it is difficult for a team to settle on a consistent way of doing it, leading to inconsistent implementations and/or time wasted debating which implementation to use.
 * Scala newbies get confused by it.
-* Expecting dependencies to have specific names creates a coupling between the component and the wiring.
-* Declaring components with stubs in tests seems wordy to me.
+* Expecting dependencies to have specific names creates an unnecessary and unhelpful coupling between the component and the wiring.
+* Declaring stub components for tests is wordier because you need to explicitly name each field.
 * Aesthetically, it feels less functional because you're using inheritance. Even a constructor feels more like a function since you're still passing in arguments and receiving a value (the initialized instance).
+
+## Deployment
+
+The documentation for Play describes [a number of ways][play-deployment] to deploy your application in production. One convenient method not described there, however, is deploying to Docker. This functionality is provided indirectly through the [sbt-native-packager][] plugin. Note that for our project, the web application is in contacts-web, so the commands described in the Play documentation will need to be run from that project. For example, you want `contacts-web/dist`, not just `dist`.
+
+To publish the Docker image locally, run this command from the Activator/SBT prompt:
+
+```
+contacts-web/docker:publishLocal
+```
+
+To run that image from the command line, run:
+
+```
+docker -e 'APPLICATION_SECRET=your_secret_here' -p 9000:9000 contacts-web:0.1-SNAPSHOT
+```
+
+[play-deployment]: https://playframework.com/documentation/2.5.x/Production
+[sbt-native-packager]: http://www.scala-sbt.org/sbt-native-packager/

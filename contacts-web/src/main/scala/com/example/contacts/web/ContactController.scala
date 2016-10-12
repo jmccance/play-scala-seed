@@ -1,4 +1,4 @@
-package com.example.web
+package com.example.contacts.web
 
 import com.example.contacts.service.{ContactService, CreateContact, GetContact}
 import play.api.libs.concurrent.Execution.Implicits._

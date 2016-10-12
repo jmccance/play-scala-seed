@@ -1,4 +1,4 @@
-package com.example
+package com.example.contacts
 
 /** The web package contains classes specific to the REST API: controllers, routers,
   * JSON formats, and the application loader.

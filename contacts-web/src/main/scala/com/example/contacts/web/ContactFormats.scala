@@ -1,9 +1,8 @@
-package com.example.web
+package com.example.contacts.web
 
 import com.example.contacts.model._
-import com.example.contacts.service.{CreateContact, GetContact}
-import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 /** play-json serializers for the Contact model. */
 trait ContactFormats {
